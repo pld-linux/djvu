@@ -32,8 +32,12 @@ Summary:	DjVu Reference Library development package
 Summary(pl):	Biblioteka DjVu dla programistСw
 Group:		Development/Libraries
 Group(de):	Entwicklung/Libraries
+Group(es):	Desarrollo/Bibliotecas
 Group(fr):	Development/Librairies
 Group(pl):	Programowanie/Biblioteki
+Group(pt_BR):	Desenvolvimento/Bibliotecas
+Group(ru):	Разработка/Библиотеки
+Group(uk):	Розробка/Б╕бл╕отеки
 
 %description devel
 DjVu Reference Library - static library and header files.
