@@ -7,6 +7,7 @@ Release:	0.%{snap}.1
 License:	GPL
 Group:		Libraries
 Source0:	http://www.lizardtech.com/software/djvureferencelibrary/version3/DjVu%{version}.snapshot-%{snap}.src.tar.gz
+# Source0-md5:	959742232203df8cbeaa210ce4623bba
 Patch0:		%{name}-config.patch
 Patch1:		%{name}-libjpeg.patch
 URL:		http://www.djvu.att.com/
