@@ -1,0 +1,159 @@
+diff -Nur DjVu3.orig/config/cc.sh DjVu3/config/cc.sh
+--- DjVu3.orig/config/cc.sh	Tue Jan  9 18:29:22 2001
++++ DjVu3/config/cc.sh	Mon Jul  9 00:58:27 2001
+@@ -89,27 +89,6 @@
+   fi
+   CCFLAGS=`echo "${CCPIPE}" "${CCFLAGS}"`
+   
+-  CCMMX=""
+-  m=`${uname} -m`
+-  if [ "${m}" = i686 ]
+-  then
+-    echon "Chesking whether ${CC} -mpentiumpro and -mmx work ... "
+-    if ( run $CC ${CCFLAGS} -mpentiumpro -c $temp.c) 
+-    then
+-      CCMMX="-mpentiumpro"
+-      if ( run $CC ${CCFLAGS} ${CCMMX} -mmx -c $temp.c )
+-      then
+-        CCMMX="$CCMMX -mmx"
+-        echo "yes, both work"
+-      else
+-        echo "just $CCMMX works"
+-      fi
+-    else
+-      echo no
+-    fi
+-    CCFLAGS=`echo "${CCMMX}" "${CCFLAGS}"`
+-  fi
+-
+   echon "Checking whether ${CC} is gcc ... "
+   echo 'int main(void) { return __GNUC__;}' | testfile $temp.c
+   CCOPT=""
+@@ -120,19 +99,11 @@
+     echo yes
+     cc_is_gcc=yes
+     CCWARN="-Wall"
+-    echon "Checking whether ${CC} -O3 works ... "
+-    if ( run $CC ${CCFLAGS} -O3 -c $temp.c )
+-    then
+-      echo yes
+-      CCOPT="-O3"
+-    else
+-      echo no
+-    fi
+-    echon "Checking whether ${CC} -funroll-loops works ... "
+-    if ( run $CC ${CCFLAGS} ${CCOPT} -funroll-loops -c $temp.c )
++    echon "Checking whether ${CC} ${OPT} works ... "
++    if ( run $CC ${CCFLAGS} ${OPT} -c $temp.c )
+     then
+       echo yes
+-      CCUNROLL="-funroll-loops"
++      CCOPT="${OPT}"
+     else
+       echo no
+     fi
+diff -Nur DjVu3.orig/config/cxx.sh DjVu3/config/cxx.sh
+--- DjVu3.orig/config/cxx.sh	Tue Jan  9 18:29:22 2001
++++ DjVu3/config/cxx.sh	Mon Jul  9 01:00:18 2001
+@@ -94,19 +94,6 @@
+   fi
+   CXXFLAGS=`echo "${CXXPIPE}" "${CXXFLAGS}"`
+ 
+-  CXXMMX=""
+-  if [ `uname -m` = i686 ]
+-  then
+-    echon "Checking ${CXX} supports pentium optimizations ... "
+-    check_compile_flags CXXMMX $temp.cpp "-mpentiumpro -mmx" "-mpentiumpro"
+-    if [ -z "$CXXMMX" ] ; then
+-      echo "none"
+-    else
+-      echo "$CXXMMX"
+-      CXXFLAGS="${CXXMMX} ${CXXFLAGS}"
+-    fi
+-  fi
+-
+   echon "Checking whether ${CXX} is gcc ... "
+   echo 'int main(void) { return __GNUG__;}' | testfile $temp.cpp
+   CXXOPT=""
+@@ -117,18 +104,10 @@
+     echo yes
+     cxx_is_gcc=yes
+     CXXWARN="-Wall"
+-    echon "Checking whether ${CXX} -O3 works ... "
+-    if ( run $CXX ${CXXFLAGS} -O3 -c $temp.cpp ) ; then
+-      echo yes
+-      CXXOPT="-O3"
+-    else
+-      echo no
+-    fi
+-    echon "Checking whether ${CXX} -funroll-loops works ... "
+-    if ( run $CXX ${CXXFLAGS} ${CXXOPT} -funroll-loops -c $temp.cpp )
+-    then
++    echon "Checking whether ${CXX} ${OPTXX} works ... "
++    if ( run $CXX ${CXXFLAGS} ${OPTXX} -c $temp.cpp ) ; then
+       echo yes
+-      CXXUNROLL="-funroll-loops"
++      CXXOPT="${OPTXX}"
+     else
+       echo no
+     fi
+diff -Nur DjVu3.orig/configure DjVu3/configure
+--- DjVu3.orig/configure	Thu Nov  9 21:15:05 2000
++++ DjVu3/configure	Mon Jul  9 00:56:09 2001
+@@ -1,4 +1,4 @@
+-#!/bin/ksh
++#!/bin/sh
+ #C-
+ #C- DjVu® Reference Library (v. 3.0)
+ #C- 
+@@ -88,18 +88,13 @@
+    esac
+ done
+ 
+-if [ ! -d "$TOPSRCDIR/src/3rd-party/libjpeg" ] 
+-then
+-  without_jpeg=true
+-fi
+-
+ if [ -z "$without_jpeg" ] 
+ then
+       C_DEFS=APPEND
+       A_DEFS="$A_DEFS -DNEED_JPEG_DECODER"
+       C_INCS=APPEND
+-      A_INCS="$A_INCS -I./TOPDIR/src/3rd-party/libjpeg -I./TOPDIR/SRCDIR/src/3rd-party/libjpeg"
+-      LIBJPEG='$(LIBPATH)/libdjpeg.a'
++      A_INCS="$A_INCS -I/usr/include"
++      LIBJPEG='-ljpeg'
+ else
+       LIBJPEG=""
+ fi
+@@ -141,21 +136,6 @@
+ generate_makefile src/libdjvu++/Test
+ generate_makefile src/djvutools/reference
+ 
+-if [ -z "$without_jpeg" ] 
+-then
+-    ## This is the version with JPEG 
+-    generate_makefile src/3rd-party/libjpeg
+-    generate_main_makefile src/3rd-party/libjpeg src/libdjvu++ <<\EOF
+-all: 
+-	( cd src/3rd-party/libjpeg; $(MAKE) lib prog)
+-	( cd src/libdjvu++; $(MAKE) lib )
+-	( cd src/djvutools/reference; $(MAKE) prog )
+-
+-install:
+-	echo Rule not supported...
+-EOF
+-
+-else
+     ## This is the regular version
+     generate_main_makefile src/libdjvu++ <<\EOF
+ all: 
+@@ -165,7 +145,6 @@
+ install:
+ 	echo Rule not supported...
+ EOF
+-fi
+ 
+ 
+ 
