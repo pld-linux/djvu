@@ -6,13 +6,6 @@ Version:	3.0
 Release:	0.%{snap}.1
 License:	GPL
 Group:		Libraries
-Group(de):	Libraries
-Group(es):	Bibliotecas
-Group(fr):	Librairies
-Group(pl):	Biblioteki
-Group(pt_BR):	Bibliotecas
-Group(ru):	Библиотеки
-Group(uk):	Б╕бл╕отеки
 Source0:	http://www.lizardtech.com/software/djvureferencelibrary/version3/DjVu%{version}.snapshot-%{snap}.src.tar.gz
 Patch0:		%{name}-config.patch
 Patch1:		%{name}-libjpeg.patch
@@ -31,13 +24,6 @@ Biblioteka do obsЁugi formatu DjVu.
 Summary:	DjVu Reference Library development package
 Summary(pl):	Biblioteka DjVu dla programistСw
 Group:		Development/Libraries
-Group(de):	Entwicklung/Libraries
-Group(es):	Desarrollo/Bibliotecas
-Group(fr):	Development/Librairies
-Group(pl):	Programowanie/Biblioteki
-Group(pt_BR):	Desenvolvimento/Bibliotecas
-Group(ru):	Разработка/Библиотеки
-Group(uk):	Розробка/Б╕бл╕отеки
 
 %description devel
 DjVu Reference Library - static library and header files.
