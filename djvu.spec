@@ -4,12 +4,12 @@ Name:		djvu
 Version:	3.0
 %define		snap	20010511
 Release:	0.%{snap}
+License:	GPL
 Group:		Libraries
 Group(de):	Libraries
 Group(es):	Bibliotecas
 Group(fr):	Librairies
 Group(pl):	Biblioteki
-License:	GPL
 Source0:	http://www.lizardtech.com/software/djvureferencelibrary/version3/DjVu%{version}.snapshot-%{snap}.src.tar.gz
 Patch0:		%{name}-config.patch
 Patch1:		%{name}-libjpeg.patch
@@ -31,7 +31,6 @@ Group:		Development/Libraries
 Group(de):	Entwicklung/Libraries
 Group(fr):	Development/Librairies
 Group(pl):	Programowanie/Biblioteki
-# doesn't require base
 
 %description devel
 DjVu Reference Library - static library and header files.
