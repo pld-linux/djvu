@@ -3,7 +3,7 @@ Summary(pl):	Biblioteka do obs³ugi formatu DjVu
 Name:		djvu
 Version:	3.0
 %define		snap	20010511
-Release:	0.%{snap}
+Release:	0.%{snap}.1
 License:	GPL
 Group:		Libraries
 Group(de):	Libraries
@@ -45,7 +45,7 @@ Biblioteka DjVu - biblioteka statyczna i pliki nag³ówkowe.
 
 %build
 OPT="%{rpmcflags}"
-%ifarch i586 i686
+%ifarch i586 i686 athlon
 OPT="$OPT -DMMX"
 %endif
 # uses exceptions and implicit templactes
