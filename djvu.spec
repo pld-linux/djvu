@@ -56,14 +56,12 @@ install build/linux-libc6/configure/bin/* $RPM_BUILD_ROOT%{_bindir}
 install build/linux-libc6/configure/lib/*.a $RPM_BUILD_ROOT%{_libdir}
 install src/include/*.h $RPM_BUILD_ROOT%{_includedir}
 
-gzip -9nf README.txt Samples/README
-
 %clean
 rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc Doc Samples *.gz
+%doc Doc Samples README.txt
 %attr(755,root,root) %{_bindir}/*
 
 %files devel
