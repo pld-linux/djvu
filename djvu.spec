@@ -39,8 +39,10 @@ Biblioteka DjVu - biblioteka statyczna i pliki nag³ówkowe.
 
 %build
 OPT="%{rpmcflags}"
-%ifarch i586 i686 athlon
+%ifarch %{ix86}
+%ifnarch i386 i486
 OPT="$OPT -DMMX"
+%endif
 %endif
 # uses exceptions and implicit templactes
 OPTXX="$OPT"
