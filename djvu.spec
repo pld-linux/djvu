@@ -1,5 +1,5 @@
 Summary:	DjVu Reference Library
-Summary(pl.UTF-8):   Biblioteka do obsługi formatu DjVu
+Summary(pl.UTF-8):	Biblioteka do obsługi formatu DjVu
 Name:		djvu
 Version:	3.0
 %define		snap	20010511
@@ -23,7 +23,7 @@ Biblioteka do obsługi formatu DjVu.
 
 %package devel
 Summary:	DjVu Reference Library development package
-Summary(pl.UTF-8):   Biblioteka DjVu dla programistów
+Summary(pl.UTF-8):	Biblioteka DjVu dla programistów
 Group:		Development/Libraries
 
 %description devel
