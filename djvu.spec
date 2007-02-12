@@ -1,5 +1,5 @@
 Summary:	DjVu Reference Library
-Summary(pl):	Biblioteka do obs≥ugi formatu DjVu
+Summary(pl.UTF-8):   Biblioteka do obs≈Çugi formatu DjVu
 Name:		djvu
 Version:	3.0
 %define		snap	20010511
@@ -18,19 +18,19 @@ BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 %description
 DjVu Reference Library.
 
-%description -l pl
-Biblioteka do obs≥ugi formatu DjVu.
+%description -l pl.UTF-8
+Biblioteka do obs≈Çugi formatu DjVu.
 
 %package devel
 Summary:	DjVu Reference Library development package
-Summary(pl):	Biblioteka DjVu dla programistÛw
+Summary(pl.UTF-8):   Biblioteka DjVu dla programist√≥w
 Group:		Development/Libraries
 
 %description devel
 DjVu Reference Library - static library and header files.
 
-%description devel -l pl
-Biblioteka DjVu - biblioteka statyczna i pliki nag≥Ûwkowe.
+%description devel -l pl.UTF-8
+Biblioteka DjVu - biblioteka statyczna i pliki nag≈Ç√≥wkowe.
 
 %prep
 %setup -q -n DjVu3
