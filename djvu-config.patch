@@ -1,6 +1,15 @@
 diff -Nur DjVu3.orig/config/cc.sh DjVu3/config/cc.sh
 --- DjVu3.orig/config/cc.sh	Tue Jan  9 18:29:22 2001
 +++ DjVu3/config/cc.sh	Mon Jul  9 00:58:27 2001
+@@ -46,7 +46,7 @@
+ EGCS="egcs"
+ if [ -z "$CC_SET" ]
+ then
+-  (echo '#include <stdio.h>';echo 'int main(void) {puts("Hello World\n");return 0;}')|testfile $temp.c
++  (echo '#include <stdio.h>';echo 'int main(void) {puts("Hello World\\n");return 0;}')|testfile $temp.c
+   CCPIC_SET=""
+   CCFLAGS=""
+   CCSYMBOLIC=""
 @@ -89,27 +89,6 @@
    fi
    CCFLAGS=`echo "${CCPIPE}" "${CCFLAGS}"`
@@ -52,6 +61,17 @@ diff -Nur DjVu3.orig/config/cc.sh DjVu3/config/cc.sh
      else
        echo no
      fi
+--- DjVu3/config/ccpic.sh.orig	2001-01-09 18:29:22.000000000 +0100
++++ DjVu3/config/ccpic.sh	2021-03-28 17:10:41.502783064 +0200
+@@ -48,7 +48,7 @@
+ then
+   CCSYMBOLIC=""
+   CCPIC=""
+-  (echo '#include <stdio.h>';echo 'int main(void) {puts("Hello World\n");return 0;}')|testfile $temp.c
++  (echo '#include <stdio.h>';echo 'int main(void) {puts("Hello World\\n");return 0;}')|testfile $temp.c
+ 
+   echon "Checking ${CC} symbolic option ... "
+   CCSYMBOLIC=""
 diff -Nur DjVu3.orig/config/cxx.sh DjVu3/config/cxx.sh
 --- DjVu3.orig/config/cxx.sh	Tue Jan  9 18:29:22 2001
 +++ DjVu3/config/cxx.sh	Mon Jul  9 01:00:18 2001

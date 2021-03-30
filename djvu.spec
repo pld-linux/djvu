@@ -1,3 +1,4 @@
+# NOTE: obsolete project, use djvulibre instead
 Summary:	DjVu Reference Library
 Summary(pl.UTF-8):	Biblioteka do obsługi formatu DjVu
 Name:		djvu
@@ -10,7 +11,8 @@ Source0:	http://www.lizardtech.com/software/djvureferencelibrary/version3/DjVu%{
 # Source0-md5:	959742232203df8cbeaa210ce4623bba
 Patch0:		%{name}-config.patch
 Patch1:		%{name}-libjpeg.patch
-URL:		http://www.djvu.att.com/
+Patch2:		%{name}-c++.patch
+URL:		http://www.djvu.org/
 BuildRequires:	libjpeg-devel
 BuildRequires:	libstdc++-devel
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
@@ -36,6 +38,7 @@ Biblioteka DjVu - biblioteka statyczna i pliki nagłówkowe.
 %setup -q -n DjVu3
 %patch0 -p1
 %patch1 -p1
+%patch2 -p1
 
 %build
 OPT="%{rpmcflags}"
@@ -47,7 +50,9 @@ OPT="$OPT -DMMX"
 # uses exceptions and implicit templactes
 OPTXX="$OPT"
 export OPT OPTXX
-./configure --with-threads=posix
+./configure \
+	--with-threads=posix
+
 cd build/linux-libc6/configure
 %{__make}
 
@@ -65,9 +70,26 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %doc Doc Samples README.txt
-%attr(755,root,root) %{_bindir}/*
+%attr(755,root,root) %{_bindir}/bzz
+%attr(755,root,root) %{_bindir}/c44
+%attr(755,root,root) %{_bindir}/cdjvu
+%attr(755,root,root) %{_bindir}/cjb2
+%attr(755,root,root) %{_bindir}/cpaldjvu
+%attr(755,root,root) %{_bindir}/csepdjvu
+%attr(755,root,root) %{_bindir}/d44
+%attr(755,root,root) %{_bindir}/ddjvu
+%attr(755,root,root) %{_bindir}/djthumb
+%attr(755,root,root) %{_bindir}/djvm
+%attr(755,root,root) %{_bindir}/djvmcvt
+%attr(755,root,root) %{_bindir}/djvuanno
+%attr(755,root,root) %{_bindir}/djvudump
+%attr(755,root,root) %{_bindir}/djvuextract
+%attr(755,root,root) %{_bindir}/djvumake
+%attr(755,root,root) %{_bindir}/djvutxt
+%attr(755,root,root) %{_bindir}/ppmcoco
 
 %files devel
 %defattr(644,root,root,755)
-%{_libdir}/*.a
-%{_includedir}/*.h
+%{_libdir}/libdjvu.a
+%{_includedir}/DjVu.h
+%{_includedir}/DjVuVersion.h

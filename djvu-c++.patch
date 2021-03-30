@@ -1,0 +1,1060 @@
+--- DjVu3/src/libdjvu++/DjVuGlobal.h.orig	2001-01-04 23:04:55.000000000 +0100
++++ DjVu3/src/libdjvu++/DjVuGlobal.h	2021-03-28 17:18:33.540225818 +0200
+@@ -48,7 +48,7 @@
+ 		}
+ 	#endif
+ #else	// Non-CE platforms support this in a sensible fashion.
+-	#include <new.h>
++	#include <new>
+ #endif
+ 
+ 
+--- DjVu3/src/libdjvu++/GContainer.h.orig	2001-03-13 02:34:50.000000000 +0100
++++ DjVu3/src/libdjvu++/GContainer.h	2021-03-28 20:56:57.142570844 +0200
+@@ -761,9 +761,9 @@ GListImpl<TI>::newnode(const TI &elt)
+ template<class TI> int
+ GListImpl<TI>::operator==(const GListImpl<TI> &l2) const
+ {
+-  Node *p, *q;
++  LNode *p, *q;
+   for (p=head.next, q=l2.head.next; p && q; p=p->next, q=q->next )
+-    if (p->data != q->data)
++    if (p->val != q->val)
+       return 0;
+   return p==0 && q==0;
+ }
+@@ -788,11 +788,13 @@ GListImpl<TI>::search(const TI &elt, GPo
+ template <class TYPE, class TI>
+ class GListTemplate : protected GListImpl<TI>
+ {
++protected:
++  typedef typename GListImpl<TI>::LNode LNode;
+ public:
+   // -- ACCESS
+   /** Returns the number of elements in the list. */
+   int size() const
+-    { return nelem; } ;
++    { return this->nelem; } ;
+   /** Returns the first position in the list. See \Ref{GPosition}. */
+   GPosition firstpos() const
+     { return GListImpl<TI>::firstpos(); } ;
+@@ -821,7 +823,7 @@ public:
+   /** Tests whether a list is empty.  
+       Returns a non zero value if the list contains no elements. */
+   int isempty() const 
+-    { return nelem==0; } ;
++    { return this->nelem==0; } ;
+   /** Compares two lists. Returns a non zero value if and only if both lists
+       contain the same elements (as tested by #TYPE::operator==(const TYPE&)#
+       in the same order. */
+@@ -862,21 +864,21 @@ public:
+   /** Inserts an element after the last element of the list. 
+       The new element is initialized with a copy of argument #elt#. */
+   void append(const TYPE &elt)
+-    { GListImpl<TI>::append(newnode((const TI&)elt)); } ;
++    { GListImpl<TI>::append(this->newnode((const TI&)elt)); } ;
+   /** Inserts an element before the first element of the list. 
+       The new element is initialized with a copy of argument #elt#. */
+   void prepend(const TYPE &elt)
+-    { GListImpl<TI>::prepend(newnode((const TI&)elt)); } ;
++    { GListImpl<TI>::prepend(this->newnode((const TI&)elt)); } ;
+   /** Inserts a new element after the list element at position #pos#.  When
+       position #pos# is null the element is inserted at the beginning of the
+       list.  The new element is initialized with a copy of #elt#. */
+   void insert_after(GPosition pos, const TYPE &elt)
+-    { GListImpl<TI>::insert_after(pos, newnode((const TI&)elt)); } ;
++    { GListImpl<TI>::insert_after(pos, this->newnode((const TI&)elt)); } ;
+   /** Inserts a new element before the list element at position #pos#. When
+       position #pos# is null the element is inserted at the end of the
+       list. The new element is initialized with a copy of #elt#. */
+   void insert_before(GPosition pos, const TYPE &elt)
+-    { GListImpl<TI>::insert_before(pos, newnode((const TI&)elt)); } ;
++    { GListImpl<TI>::insert_before(pos, this->newnode((const TI&)elt)); } ;
+   /** Inserts an element of another list into this list.  This function
+       removes the element at position #frompos# in list #frompos#, inserts it
+       in the current list before the element at position #pos#, and advances
+@@ -943,6 +945,88 @@ public:
+ 
+ //@}
+ 
++// ------------------------------------------------------------
++// HASH FUNCTIONS
++// ------------------------------------------------------------
++
++
++/** @name Hash functions
++    These functions let you use template class \Ref{GMap} with the
++    corresponding elementary types. The returned hash code may be reduced to
++    an arbitrary range by computing its remainder modulo the upper bound of
++    the range.
++    @memo Hash functions for elementary types. */
++//@{
++
++/** Hashing function (unsigned int). */
++static inline unsigned int 
++hash(const unsigned int & x) 
++{ 
++  return x; 
++}
++
++/** Hashing function (int). */
++static inline unsigned int 
++hash(const int & x) 
++{ 
++  return (unsigned int)x;
++}
++
++/** Hashing function (long). */
++static inline unsigned int
++hash(const long & x) 
++{ 
++  return (unsigned int)x;
++}
++
++/** Hashing function (unsigned long). */
++static inline unsigned int
++hash(const unsigned long & x) 
++{ 
++  return (unsigned int)x;
++}
++
++/** Hashing function (void *). */
++static inline unsigned int 
++hash(void * const & x) 
++{ 
++  return (unsigned int) x; 
++}
++
++/** Hashing function (void *). */
++static inline unsigned int 
++hash(const void * const & x) 
++{ 
++  return (unsigned int) x; 
++}
++
++/** Hashing function (float). */
++static inline unsigned int
++hash(const float & x) 
++{ 
++  // optimizer will get rid of unnecessary code  
++  unsigned int *addr = (unsigned int*)&x;
++  if (sizeof(float)<2*sizeof(unsigned int))
++    return addr[0];
++  else
++    return addr[0]^addr[1];
++}
++
++/** Hashing function (double). */
++static inline unsigned int
++hash(const double & x) 
++{ 
++  // optimizer will get rid of unnecessary code
++  unsigned int *addr = (unsigned int*)&x;
++  if (sizeof(double)<2*sizeof(unsigned int))
++    return addr[0];
++  else if (sizeof(double)<4*sizeof(unsigned int))
++    return addr[0]^addr[1];
++  else
++    return addr[0]^addr[1]^addr[2]^addr[3];    
++}
++
++//@}
+ 
+ 
+ // ------------------------------------------------------------
+@@ -1079,7 +1163,7 @@ class GMapImpl : public GSetImpl<K>
+ {
+ protected:
+   GMapImpl();
+-  GMapImpl(const Traits &traits);
++  GMapImpl(const GCONT Traits &traits);
+   typedef GCONT MapNode<K,TI> MNode;
+   GCONT HNode* get_or_create(const K &key);
+ };
+@@ -1091,7 +1175,7 @@ GMapImpl<K,TI>::GMapImpl()
+ }
+ 
+ template<class K, class TI>
+-GMapImpl<K,TI>::GMapImpl(const Traits &traits)
++GMapImpl<K,TI>::GMapImpl(const GCONT Traits &traits)
+   : GSetImpl<K>(traits) 
+ { 
+ }
+@@ -1099,7 +1183,7 @@ GMapImpl<K,TI>::GMapImpl(const Traits &t
+ template<class K, class TI> GCONT HNode *
+ GMapImpl<K,TI>::get_or_create(const K &key)
+ {
+-  HNode *m = get(key);
++  GCONT HNode *m = this->get(key);
+   if (m) return m;
+   MNode *n = (MNode*) operator new (sizeof(MNode));
+ #if GCONTAINER_ZERO_FILL
+@@ -1108,7 +1192,7 @@ GMapImpl<K,TI>::get_or_create(const K &k
+   new ((void*)&(n->key)) K  (key);
+   new ((void*)&(n->val)) TI ();
+   n->hashcode = hash((const K&)(n->key));
+-  installnode(n);
++  this->installnode(n);
+   return n;
+ }
+ 
+@@ -1123,11 +1207,13 @@ GMapImpl<K,TI>::get_or_create(const K &k
+ template <class KTYPE, class VTYPE, class TI>
+ class GMapTemplate : protected GMapImpl<KTYPE,TI>
+ {
++protected:
++  typedef typename GMapImpl<KTYPE,TI>::MNode MNode;
+ public:
+   // -- ACCESS
+   /** Returns the number of elements in the map. */
+   int size() const
+-    { return nelems; } ;
++    { return this->nelems; } ;
+   /** Returns the first position in the map. */
+   GPosition firstpos() const
+     { return GMapImpl<KTYPE,TI>::firstpos(); } ;
+@@ -1137,7 +1223,7 @@ public:
+   /** Tests whether the associative map is empty.  
+       Returns a non zero value if and only if the map contains zero entries. */
+   int isempty() const
+-    { return nelems==0; } ;
++    { return this->nelems==0; } ;
+   /** Searches an entry for key #key#.  If the map contains an entry whose key
+       is equal to #key# according to #KTYPE::operator==(const KTYPE&)#, this
+       function returns its position.  Otherwise it returns an invalid
+@@ -1175,13 +1261,13 @@ public:
+       contains key #key#. This variant of #operator[]# is necessary when
+       dealing with a #const GMAP<KTYPE,VTYPE>#. */
+   const VTYPE& operator[](const KTYPE &key) const
+-    { return (const VTYPE&)(((const MNode*)(get_or_throw(key)))->val); }
++    { return (const VTYPE&)(((const MNode*)(this->get_or_throw(key)))->val); }
+   /** Returns a reference to the value of the map entry for key #key#.  This
+       reference can be used for both reading (as "#a[n]#") and modifying (as
+       "#a[n]=v#"). If there is no entry for key #key#, a new entry is created
+       for that key with the null constructor #VTYPE::VTYPE()#. */
+   VTYPE& operator[](const KTYPE &key)
+-    { return (VTYPE&)(((MNode*)(get_or_create(key)))->val); }
++    { return (VTYPE&)(((MNode*)(this->get_or_create(key)))->val); }
+   /** Destroys the map entry for position #pos#.  
+       Nothing is done if position #pos# is not a valid position. */
+   void del(GPosition &pos)
+@@ -1193,7 +1279,7 @@ public:
+   /* Old iterators. Do not use. */
+ #if GCONTAINER_OLD_ITERATORS
+   void first(GPosition &pos) const { pos = firstpos(); } ;
+-  void last(GPosition &pos) const { pos = lastpos(); } ;
++  void last(GPosition &pos) const { pos = this->lastpos(); } ;
+   const VTYPE *next(GPosition &pos) const 
+     { if (!pos) return 0; const VTYPE *x=&((*this)[pos]); ++pos; return x; } ;
+   VTYPE *next(GPosition &pos)
+@@ -1246,88 +1332,6 @@ public:
+ };
+ 
+ 
+-// ------------------------------------------------------------
+-// HASH FUNCTIONS
+-// ------------------------------------------------------------
+-
+-
+-/** @name Hash functions
+-    These functions let you use template class \Ref{GMap} with the
+-    corresponding elementary types. The returned hash code may be reduced to
+-    an arbitrary range by computing its remainder modulo the upper bound of
+-    the range.
+-    @memo Hash functions for elementary types. */
+-//@{
+-
+-/** Hashing function (unsigned int). */
+-static inline unsigned int 
+-hash(const unsigned int & x) 
+-{ 
+-  return x; 
+-}
+-
+-/** Hashing function (int). */
+-static inline unsigned int 
+-hash(const int & x) 
+-{ 
+-  return (unsigned int)x;
+-}
+-
+-/** Hashing function (long). */
+-static inline unsigned int
+-hash(const long & x) 
+-{ 
+-  return (unsigned int)x;
+-}
+-
+-/** Hashing function (unsigned long). */
+-static inline unsigned int
+-hash(const unsigned long & x) 
+-{ 
+-  return (unsigned int)x;
+-}
+-
+-/** Hashing function (void *). */
+-static inline unsigned int 
+-hash(void * const & x) 
+-{ 
+-  return (unsigned int) x; 
+-}
+-
+-/** Hashing function (void *). */
+-static inline unsigned int 
+-hash(const void * const & x) 
+-{ 
+-  return (unsigned int) x; 
+-}
+-
+-/** Hashing function (float). */
+-static inline unsigned int
+-hash(const float & x) 
+-{ 
+-  // optimizer will get rid of unnecessary code  
+-  unsigned int *addr = (unsigned int*)&x;
+-  if (sizeof(float)<2*sizeof(unsigned int))
+-    return addr[0];
+-  else
+-    return addr[0]^addr[1];
+-}
+-
+-/** Hashing function (double). */
+-static inline unsigned int
+-hash(const double & x) 
+-{ 
+-  // optimizer will get rid of unnecessary code
+-  unsigned int *addr = (unsigned int*)&x;
+-  if (sizeof(double)<2*sizeof(unsigned int))
+-    return addr[0];
+-  else if (sizeof(double)<4*sizeof(unsigned int))
+-    return addr[0]^addr[1];
+-  else
+-    return addr[0]^addr[1]^addr[2]^addr[3];    
+-}
+-
+-//@}
+ //@}
+ //@}
+ 
+--- DjVu3/src/libdjvu++/GString.h.orig	2021-03-28 18:08:37.013954605 +0200
++++ DjVu3/src/libdjvu++/GString.h	2021-03-28 18:08:39.953938678 +0200
+@@ -75,6 +75,8 @@
+ #endif
+ 
+ 
++class GString;
++
+ // Internal string representation.
+ 
+ class GStringRep : public GPEnabled
+--- DjVu3/src/libdjvu++/GString.cpp.orig	2001-03-13 22:33:22.000000000 +0100
++++ DjVu3/src/libdjvu++/GString.cpp	2021-03-28 18:35:26.288569749 +0200
+@@ -335,13 +335,13 @@
+       ret += substr(amp_locn,len+2);
+     }
+     start_locn = semi_locn + 1;
+-    DEBUG_MSG( "ret = '" << ret << "'\n" );
++    DEBUG_MSG( "ret = '" << (const char*)ret << "'\n" );
+   }
+ 
+                                 // Copy the end of the string to the output
+   ret += substr( start_locn, length()-start_locn );
+ 
+-  DEBUG_MSG( "Unescaped string is '" << ret << "'\n" );
++  DEBUG_MSG( "Unescaped string is '" << (const char*)ret << "'\n" );
+   return ret;
+ }
+ 
+@@ -434,7 +434,7 @@
+   if (from<0 || from>=len)
+     return -1;
+   const char *str = (const char*)(*this);
+-  char *s = strchr(&str[from], c);
++  const char *s = strchr(&str[from], c);
+   return (s ? s - str : -1);
+ }
+   
+@@ -447,7 +447,7 @@
+     from += len;
+   if (from<0 || from>=len)
+     return -1;
+-  char *s = strstr(&src[from], str);
++  const char *s = strstr(&src[from], str);
+   return (s ? s - src : -1);
+ }
+ 
+--- DjVu3/src/libdjvu++/GException.cpp.orig	2001-01-10 20:45:51.000000000 +0100
++++ DjVu3/src/libdjvu++/GException.cpp	2021-03-28 18:47:12.514743794 +0200
+@@ -213,6 +213,6 @@
+ #else // !_MSC_VER
+ // Standard C++
+ static void throw_memory_error() { G_THROW(GException::outofmemory); }
+-static void (*old_handler)() = set_new_handler(throw_memory_error);
++static void (*old_handler)() = std::set_new_handler(throw_memory_error);
+ #endif // !_MSC_VER
+ #endif // !NEED_DJVU_MEMORY
+--- DjVu3/src/libdjvu++/Arrays.h.orig	2001-01-04 23:04:54.000000000 +0100
++++ DjVu3/src/libdjvu++/Arrays.h	2021-03-28 19:21:37.146892054 +0200
+@@ -336,7 +336,7 @@
+ ArrayBase::detach(void)
+ {
+    ArrayRep * new_rep=new ArrayRep(*(ArrayRep *) get());
+-   assign(new_rep);
++   this->assign(new_rep);
+ }
+ 
+ inline void
+@@ -676,21 +676,21 @@
+ template <class TYPE> 
+ TArray<TYPE>::TArray ()
+ {
+-   assign(new ArrayRep(sizeof(TYPE), destroy, init1,
++   this->assign(new ArrayRep(sizeof(TYPE), destroy, init1,
+ 		       init2, init2, insert));
+ }
+ 
+ template <class TYPE> 
+ TArray<TYPE>::TArray(int hi)
+ {
+-   assign(new ArrayRep(sizeof(TYPE), destroy, init1,
++   this->assign(new ArrayRep(sizeof(TYPE), destroy, init1,
+ 		       init2, init2, insert, hi));
+ }
+ 
+ template <class TYPE> 
+ TArray<TYPE>::TArray(int lo, int hi)
+ {
+-   assign(new ArrayRep(sizeof(TYPE), destroy, init1,
++   this->assign(new ArrayRep(sizeof(TYPE), destroy, init1,
+ 		       init2, init2, insert, lo, hi));
+ }
+ 
+@@ -822,21 +822,21 @@
+ template <class TYPE> inline 
+ DArray<TYPE>::DArray ()
+ {
+-   assign(new ArrayRep(sizeof(TYPE), destroy, init1,
++   this->assign(new ArrayRep(sizeof(TYPE), destroy, init1,
+ 		       init2, copy, insert));
+ }
+ 
+ template <class TYPE> inline 
+ DArray<TYPE>::DArray(int hi)
+ {
+-   assign(new ArrayRep(sizeof(TYPE), destroy, init1,
++   this->assign(new ArrayRep(sizeof(TYPE), destroy, init1,
+ 		       init2, copy, insert, hi));
+ }
+ 
+ template <class TYPE> inline 
+ DArray<TYPE>::DArray(int lo, int hi)
+ {
+-   assign(new ArrayRep(sizeof(TYPE), destroy, init1,
++   this->assign(new ArrayRep(sizeof(TYPE), destroy, init1,
+ 		       init2, copy, insert, lo, hi));
+ }
+ 
+--- DjVu3/src/libdjvu++/DjVuPalette.cpp.orig	2001-03-06 20:55:42.000000000 +0100
++++ DjVu3/src/libdjvu++/DjVuPalette.cpp	2021-03-28 20:19:44.461332984 +0200
+@@ -65,10 +65,6 @@
+ umin(unsigned char a, unsigned char b) 
+ { return (a>b) ? b : a; }
+ 
+-inline float 
+-fmin(float a, float b) 
+-{ return (a>b) ? b : a; }
+-
+ 
+ 
+ // ------- DJVUPALETTE
+--- DjVu3/src/libdjvu++/debug.h.orig	2001-01-25 21:09:04.000000000 +0100
++++ DjVu3/src/libdjvu++/debug.h	2021-03-28 20:24:18.013184359 +0200
+@@ -163,7 +163,7 @@
+   ~DjVuDebugIndent();
+ //#define DEBUG_MAKE_INDENT_2(x, y) DjVuDebugIndent debug_indent ## y ## (x)
+ //#define DEBUG_MAKE_INDENT_1(x, y) DEBUG_MAKE_INDENT_2(x, y)
+-#define DEBUG_MAKE_INDENT_1(x, y) DjVuDebugIndent debug_indent ## y ## (x)
++#define DEBUG_MAKE_INDENT_1(x, y) DjVuDebugIndent debug_indent ## y  (x)
+ };
+ 
+ // ------------ MAIN MACROS
+--- DjVu3/src/libdjvu++/DataPool.cpp.orig	2001-02-22 22:07:45.000000000 +0100
++++ DjVu3/src/libdjvu++/DataPool.cpp	2021-03-30 06:27:20.649180094 +0200
+@@ -124,7 +124,7 @@ DataPool::OpenFiles * DataPool::OpenFile
+ 
+ DataPool::OpenFiles_File::OpenFiles_File(const char * xname, GP<DataPool> &pool) : name(xname)
+ {
+-   DEBUG_MSG("DataPool::OpenFiles_File::OpenFiles_File(): Opening file '" << name << "'\n");
++   DEBUG_MSG("DataPool::OpenFiles_File::OpenFiles_File(): Opening file '" << (const char*)name << "'\n");
+    DEBUG_MAKE_INDENT(3);
+    
+    open_time=GOS::ticks();
+@@ -134,7 +134,7 @@ DataPool::OpenFiles_File::OpenFiles_File
+ 
+ DataPool::OpenFiles_File::~OpenFiles_File(void)
+ {
+-   DEBUG_MSG("DataPool::OpenFiles_File::~OpenFiles_File(): Closing file '" << name << "'\n");
++   DEBUG_MSG("DataPool::OpenFiles_File::~OpenFiles_File(): Closing file '" << (const char*)name << "'\n");
+    DEBUG_MAKE_INDENT(3);
+ 
+       // Make all DataPools using this stream release it (so that
+@@ -1266,7 +1266,7 @@ DataPool::load_file(void)
+       pool->load_file();
+    } else if (fname.length())
+    {
+-      DEBUG_MSG("loading the data from \"" << fname << "\".\n");
++      DEBUG_MSG("loading the data from \"" << (const char*)fname << "\".\n");
+ 
+       GCriticalSectionLock lock1(&class_stream_lock);
+       GP<OpenFiles_File> f=fstream;
+@@ -1494,7 +1494,7 @@ DataPool::analyze_iff(void)
+       // DjVuFiles have IFF structure, which makes it possible to do it.
+       // If due to some reason we fail, the length will remain -1.
+ {
+-   DEBUG_MSG("DataPool::analyze_iff(): Trying to decode IFF structure of " << fname << ".\n");
++   DEBUG_MSG("DataPool::analyze_iff(): Trying to decode IFF structure of " << (const char*)fname << ".\n");
+    DEBUG_MSG("in order to predict the DataPool's size\n");
+    DEBUG_MAKE_INDENT(3);
+ 
+@@ -1642,7 +1642,7 @@ DataPool::close_all(void)
+ }
+ 
+ 
+-inline GP<ByteStream>
++GP<ByteStream>
+ DataPool::get_stream(void)
+ {
+    return new PoolByteStream(this);
+--- DjVu3/src/libdjvu++/DjVuAnno.cpp.orig	2001-03-08 17:19:29.000000000 +0100
++++ DjVu3/src/libdjvu++/DjVuAnno.cpp	2021-03-28 20:41:29.334263880 +0200
+@@ -640,7 +640,7 @@
+     if (obj && obj->get_list().size()==1)
+     {
+       GString color=(*obj)[0]->get_symbol();
+-      DEBUG_MSG("color='" << color << "'\n");
++      DEBUG_MSG("color='" << (const char*)color << "'\n");
+       return cvt_color(color, 0xffffff);
+       } else { DEBUG_MSG("can't find any.\n"); }
+   } G_CATCH_ALL {} G_ENDCATCH;
+@@ -663,7 +663,7 @@
+     if (obj && obj->get_list().size()==1)
+     {
+       GString zoom=(*obj)[0]->get_symbol();
+-      DEBUG_MSG("zoom='" << zoom << "'\n");
++      DEBUG_MSG("zoom='" << (const char*)zoom << "'\n");
+       
+       if (zoom=="stretch") return ZOOM_STRETCH;
+       else if (zoom=="one2one") return ZOOM_ONE2ONE;
+@@ -689,7 +689,7 @@
+     if (obj && obj->get_list().size()==1)
+     {
+       GString mode=(*obj)[0]->get_symbol();
+-      DEBUG_MSG("mode='" << mode << "'\n");
++      DEBUG_MSG("mode='" << (const char*)mode << "'\n");
+       
+       if (mode=="color") return MODE_COLOR;
+       else if (mode=="fore") return MODE_FORE;
+@@ -712,7 +712,7 @@
+     if (obj && obj->get_list().size()==2)
+     {
+       GString align=(*obj)[0]->get_symbol();
+-      DEBUG_MSG("hor_align='" << align << "'\n");
++      DEBUG_MSG("hor_align='" << (const char*)align << "'\n");
+       
+       if (align=="left") return ALIGN_LEFT;
+       else if (align=="center") return ALIGN_CENTER;
+@@ -734,7 +734,7 @@
+     if (obj && obj->get_list().size()==2)
+     {
+       GString align=(*obj)[1]->get_symbol();
+-      DEBUG_MSG("ver_align='" << align << "'\n");
++      DEBUG_MSG("ver_align='" << (const char*)align << "'\n");
+       
+       if (align=="top") return ALIGN_TOP;
+       else if (align=="center") return ALIGN_CENTER;
+@@ -776,8 +776,8 @@
+ 	       // Getting the comment
+         GString comment=(obj[1])->get_string();
+         
+-        DEBUG_MSG("found maparea '" << comment << "' (" <<
+-          url << ":" << target << ")\n");
++        DEBUG_MSG("found maparea '" << (const char*)comment << "' (" <<
++          (const char*)url << ":" << (const char*)target << ")\n");
+         
+         GLObject * shape=obj[2];
+         GP<GMapArea> map_area;
+--- DjVu3/src/libdjvu++/GIFFManager.cpp.orig	2001-03-06 20:55:42.000000000 +0100
++++ DjVu3/src/libdjvu++/GIFFManager.cpp	2021-03-28 20:44:39.736565715 +0200
+@@ -78,7 +78,7 @@
+ 	 G_THROW("GIFFManager.one_colon");
+    };
+ 
+-   DEBUG_MSG("auto-setting type to '" << type << "'\n");
++   DEBUG_MSG("auto-setting type to '" << (const char*)type << "'\n");
+ 
+    if (strpbrk(name, ".[]"))
+       G_THROW("GIFFManager.bad_char");
+@@ -102,7 +102,7 @@
+    GString sname=GString(name, 4);
+    for(int i=sname.length();i<4;i++) sname.setat(i, ' ');
+ 
+-   DEBUG_MSG("GIFFChunk::check_name(): type='" << type << "' name='" << sname << "'\n");
++   DEBUG_MSG("GIFFChunk::check_name(): type='" << (const char*)type << "' name='" << (const char*)sname << "'\n");
+    return (type==GIFFChunk::type || !type.length() && GIFFChunk::type=="FORM")
+        && sname==GIFFChunk::name;
+ }
+@@ -110,7 +110,7 @@
+ void
+ GIFFChunk::save(IFFByteStream & istr, bool use_trick)
+ {
+-   DEBUG_MSG("GIFFChunk::save(): saving chunk '" << get_full_name() << "'\n");
++   DEBUG_MSG("GIFFChunk::save(): saving chunk '" << (const char*)get_full_name() << "'\n");
+    DEBUG_MAKE_INDENT(3);
+ 
+    if (is_container())
+@@ -141,7 +141,7 @@
+ void
+ GIFFChunk::add_chunk(const GP<GIFFChunk> & chunk, int position)
+ {
+-   DEBUG_MSG("GIFFChunk::add_chunk(): Adding chunk to '" << get_name() <<
++   DEBUG_MSG("GIFFChunk::add_chunk(): Adding chunk to '" << (const char*)get_name() <<
+ 	     "' @ position=" << position << "\n");
+    DEBUG_MAKE_INDENT(3);
+ 
+@@ -188,7 +188,7 @@
+    if (colon>=0) short_name=(const char *) short_name+(colon+1);
+    for(int i=short_name.length();i<4;i++) short_name.setat(i, ' ');
+    
+-   DEBUG_MSG("short_name='" << short_name << "'\n");
++   DEBUG_MSG("short_name='" << (const char*)short_name << "'\n");
+    DEBUG_MSG("number=" << number << "\n");
+    
+    if (number_ptr) *number_ptr=number;
+@@ -200,7 +200,7 @@
+    // The name may contain brackets to specify the chunk number
+ {
+    DEBUG_MSG("GIFFChunk::del_chunk(): Deleting chunk '" << name <<
+-	     "' from '" << get_name() << "'\n");
++	     "' from '" << (const char*)get_name() << "'\n");
+    DEBUG_MAKE_INDENT(3);
+ 
+    GString short_name;
+@@ -222,7 +222,7 @@
+    // The name may contain brackets to specify the chunk number
+ {
+    DEBUG_MSG("GIFFChunk::get_chunk(): Returning chunk '" << name <<
+-	     "' from '" << get_name() << "'\n");
++	     "' from '" << (const char*)get_name() << "'\n");
+    DEBUG_MAKE_INDENT(3);
+ 
+    GString short_name;
+@@ -246,7 +246,7 @@
+ GIFFChunk::get_chunks_number(const char * name)
+ {
+    DEBUG_MSG("GIFFChunk::get_chunks_number(): Returning number of chunks '" << name <<
+-	     "' in '" << get_name() << "'\n");
++	     "' in '" << (const char*)get_name() << "'\n");
+    DEBUG_MAKE_INDENT(3);
+ 
+    if (!name) return chunks.size();
+@@ -294,7 +294,7 @@
+       else top_level->set_name(GString(parent_name+1, next_dot-parent_name-1));
+    };
+ 
+-   DEBUG_MSG("top level chunk name='" << top_level->get_name() << "'\n");
++   DEBUG_MSG("top level chunk name='" << (const char*)top_level->get_name() << "'\n");
+    
+    if (parent_name && strlen(parent_name) && parent_name[0]=='.')
+    {
+@@ -363,7 +363,7 @@
+       if (cbracket[1]) G_THROW("GIFFManager.garbage");
+    };
+    GString chunk_name=GString(short_name, obracket-short_name);
+-   DEBUG_MSG("Creating new chunk with name " << chunk_name << "\n");
++   DEBUG_MSG("Creating new chunk with name " << (const char*)chunk_name << "\n");
+    GP<GIFFChunk> chunk;
+    chunk=GIFFChunk::create(chunk_name, data);
+    add_chunk(GString(name, short_name-name), chunk, pos);
+@@ -382,7 +382,7 @@
+ 
+    if (name[0]=='.')
+    {
+-      char * next_dot=strchr(name+1, '.');
++      const char * next_dot=strchr(name+1, '.');
+       if (!next_dot)
+       {
+ 	 if (top_level->check_name(name+1))
+@@ -431,7 +431,7 @@
+ 
+    if (name[0]=='.')
+    {
+-      char * next_dot=strchr(name+1, '.');
++      const char * next_dot=strchr(name+1, '.');
+       if (!next_dot)
+       {
+ 	       if (top_level->check_name(name+1))
+@@ -485,7 +485,7 @@
+ GIFFManager::load_chunk(IFFByteStream & istr, GP<GIFFChunk> chunk)
+ {
+    DEBUG_MSG("GIFFManager::load_chunk(): loading contents of chunk '" <<
+-	     chunk->get_name() << "'\n");
++	     (const char*)chunk->get_name() << "'\n");
+    DEBUG_MAKE_INDENT(3);
+    
+    int chunk_size;
+--- DjVu3/src/libdjvu++/DjVuFile.cpp.orig	2001-03-09 00:57:26.000000000 +0100
++++ DjVu3/src/libdjvu++/DjVuFile.cpp	2021-03-28 20:47:49.202205959 +0200
+@@ -210,7 +210,7 @@
+   initialized=true;
+   
+   if (!(data_pool=DataPool::create(pcaster->request_data(this, url))))
+-    G_THROW("DjVuFile.no_data\t"+url);
++    G_THROW(GString("DjVuFile.no_data\t")+url);
+   data_pool->add_trigger(-1, static_trigger_cb, this);
+ }
+ 
+@@ -522,7 +522,7 @@
+     if (strchr(incl_str, '/'))
+       G_THROW("DjVuFile.malformed");
+     
+-    DEBUG_MSG("incl_str='" << incl_str << "'\n");
++    DEBUG_MSG("incl_str='" << (const char*)incl_str << "'\n");
+     
+     GURL incl_url=pcaster->id_to_url(this, incl_str);
+     if (incl_url.is_empty())	// Fallback. Should never be used.
+--- DjVu3/src/libdjvu++/DjVmDir.cpp.orig	2001-03-06 20:55:42.000000000 +0100
++++ DjVu3/src/libdjvu++/DjVmDir.cpp	2021-03-28 20:53:14.600443125 +0200
+@@ -135,7 +135,7 @@
+    if (files)
+    {
+       DEBUG_MSG("reading offsets (and sizes for ver==0)\n");
+-      for(int file=0;file<files;file++)
++      for(int filenum=0;filenum<files;filenum++)
+       {
+ 	 GP<File> file=new File();
+ 	 files_list.append(file);
+@@ -466,7 +466,7 @@
+ void
+ DjVmDir::insert_file(const GP<File> & file, int pos_num)
+ {
+-   DEBUG_MSG("DjVmDir::insert_file(): name='" << file->name << "', pos=" << pos_num << "\n");
++   DEBUG_MSG("DjVmDir::insert_file(): name='" << (const char*)file->name << "', pos=" << pos_num << "\n");
+    DEBUG_MAKE_INDENT(3);
+    
+    GCriticalSectionLock lock((GCriticalSection *) &class_lock);
+--- DjVu3/src/libdjvu++/DjVuDocument.cpp.orig	2001-03-09 00:57:26.000000000 +0100
++++ DjVu3/src/libdjvu++/DjVuDocument.cpp	2021-03-28 20:55:25.613066702 +0200
+@@ -168,7 +168,7 @@
+           G_THROW("DjVuDocument.fail_file\t"+GOS::url_to_filename(init_url));
+        }else
+        {
+-          G_THROW("DjVuDocument.fail_URL\t"+init_url);
++          G_THROW(GString("DjVuDocument.fail_URL\t")+init_url);
+        }
+      }
+    }
+@@ -600,7 +600,7 @@
+               }
+               else
+               {
+-                G_THROW("DjVuDocument.fail_URL\t"+new_url);
++                G_THROW(GString("DjVuDocument.fail_URL\t")+new_url);
+               }
+             }
+             ufile->data_pool->connect(new_pool);
+@@ -1374,10 +1374,10 @@
+ 	    {
+ 	       DEBUG_MSG("The document is in OLD_BUNDLED format\n");
+ 	       if (url.base()!=init_url)
+-		        G_THROW("DjVuDocument.URL_outside\t"+url);
++		        G_THROW(GString("DjVuDocument.URL_outside\t")+url);
+ 	 
+ 	       GP<DjVmDir0::FileRec> file=djvm_dir0->get_file(url.fname());
+-	       if (!file) G_THROW("DjVuDocument.file_outside\t"+url.fname());
++	       if (!file) G_THROW(GString("DjVuDocument.file_outside\t")+url.fname());
+ 	       data_pool=DataPool::create(init_data_pool, file->offset, file->size);
+ 	    }
+ 	    break;
+@@ -1388,7 +1388,7 @@
+ 	    {
+ 	       DEBUG_MSG("The document is in new BUNDLED format\n");
+ 	       if (url.base()!=init_url)
+-		        G_THROW("DjVuDocument.URL_outside\t"+url);
++		        G_THROW(GString("DjVuDocument.URL_outside\t")+url);
+ 	 
+ 	       GP<DjVmDir::File> file=djvm_dir->name_to_file(url.fname());
+ 	       if (!file) G_THROW("DjVuDocument.file_outside\t"+url.fname());
+@@ -1403,13 +1403,13 @@
+ 	    DEBUG_MSG("The document is in SINGLE_PAGE or OLD_INDEXED or INDIRECT format\n");
+ 	    if (flags & DOC_DIR_KNOWN)
+ 	       if (doc_type==INDIRECT && !djvm_dir->name_to_file(url.fname()))
+-		        G_THROW("DjVuDocument.URL_outside2\t"+url);
++		        G_THROW(GString("DjVuDocument.URL_outside2\t")+url);
+ 	 
+ 	    if (url.is_local_file_url())
+ 	    {
+ 	       GString fname=GOS::url_to_filename(url);
+ 	       if (GOS::basename(fname)=="-") fname="-";
+-	       DEBUG_MSG("fname=" << fname << "\n");
++	       DEBUG_MSG("fname=" << (const char *)fname << "\n");
+ 
+ 	       data_pool=DataPool::create(fname);
+ 	    }
+--- DjVu3/src/libdjvu++/DjVmDoc.cpp.orig	2001-03-06 20:55:42.000000000 +0100
++++ DjVu3/src/libdjvu++/DjVmDoc.cpp	2021-03-28 20:56:27.859396152 +0200
+@@ -71,7 +71,7 @@
+ DjVmDoc::insert_file(const GP<DjVmDir::File> & f,
+ 		     GP<DataPool> data_pool, int pos)
+ {
+-   DEBUG_MSG("DjVmDoc::insert_file(): inserting file '" << f->id <<
++   DEBUG_MSG("DjVmDoc::insert_file(): inserting file '" << (const char*)f->id <<
+ 	     "' at pos " << pos << "\n");
+    DEBUG_MAKE_INDENT(3);
+ 
+@@ -245,7 +245,7 @@
+    {
+       DjVmDir::File * f=files_list[pos];
+       
+-      DEBUG_MSG("reading contents of file '" << f->id << "'\n");
++      DEBUG_MSG("reading contents of file '" << (const char*)f->id << "'\n");
+       data[f->id]=DataPool::create(pool, f->offset, f->size);
+    }
+ }
+@@ -300,7 +300,7 @@
+       {
+ 	 DjVmDir::File * f=files_list[pos];
+       
+-	 DEBUG_MSG("reading contents of file '" << f->id << "'\n");
++	 DEBUG_MSG("reading contents of file '" << (const char*)f->id << "'\n");
+ 
+ 	 data[f->id]=DataPool::create(GOS::expand_name(f->name, dir_name));
+       }
+@@ -355,7 +355,7 @@
+ 	       G_THROW("DjVmDoc.no_data\t" + file->id);     //  Strange: there is no data for file 'xxx'.
+ 
+       GString file_name=GOS::expand_name(file->name, dir_name);
+-      DEBUG_MSG("storing file '" << file_name << "'\n");
++      DEBUG_MSG("storing file '" << (const char*)file_name << "'\n");
+ 
+       GP<ByteStream> str_in=data[data_pos]->get_stream();
+       DataPool::load_file(file_name);
+@@ -368,7 +368,7 @@
+    {
+       GString idx_full_name=GOS::expand_name(idx_name, dir_name);
+    
+-      DEBUG_MSG("storing index file '" << idx_full_name << "'\n");
++      DEBUG_MSG("storing index file '" << (const char*)idx_full_name << "'\n");
+ 
+       DataPool::load_file(idx_full_name);
+       GP<ByteStream> str=ByteStream::create(idx_full_name, "wb");
+--- DjVu3/src/libdjvu++/MMX.h.orig	2001-01-04 23:04:55.000000000 +0100
++++ DjVu3/src/libdjvu++/MMX.h	2021-03-29 22:23:29.603038572 +0200
+@@ -116,13 +116,13 @@ class MMXControl
+ #define MMXemms \
+   __asm__ volatile("emms" : : : "memory" ) 
+ #define MMXrr(op,src,dst) \
+-  __asm__ volatile( #op ## " %%" ## #src ## ",%%" ## #dst : : : "memory") 
++  __asm__ volatile( #op  " %%"  #src  ",%%"  #dst : : : "memory") 
+ #define MMXir(op,imm,dst) \
+-  __asm__ volatile( #op ## " %0,%%" ## #dst : : "i" (imm) : "memory") 
++  __asm__ volatile( #op  " %0,%%"  #dst : : "i" (imm) : "memory") 
+ #define MMXar(op,addr,dst) \
+-  __asm__ volatile( #op ## " %0,%%" ## #dst : : "rm" (*(int*)(addr)) : "memory") 
++  __asm__ volatile( #op  " %0,%%"  #dst : : "m" (addr) : "memory") 
+ #define MMXra(op,src,addr) \
+-  __asm__ volatile( #op ## " %%" #src ## ",%0" : : "rm" (*(int*)(addr)) : "memory") 
++  __asm__ volatile( #op  " %%" #src  ",%0" : : "m" (addr) : "memory") 
+ #define MMX 1
+ #endif
+ 
+--- DjVu3/src/libdjvu++/IW44Image.cpp.orig	2001-03-06 20:55:42.000000000 +0100
++++ DjVu3/src/libdjvu++/IW44Image.cpp	2021-03-29 22:24:52.842587625 +0200
+@@ -48,9 +48,11 @@
+ #include "IFFByteStream.h"
+ #include "GRect.h"
+ 
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <math.h>
++#include <mmintrin.h>
+ #include "MMX.h"
+ #undef IWTRANSFORM_TIMER
+ #ifdef IWTRANSFORM_TIMER
+@@ -123,10 +125,10 @@ public:
+ 
+ #ifdef MMX
+ 
+-static const short w9[]  = {9,9,9,9};
+-static const short w1[]  = {1,1,1,1};
+-static const int   d8[]  = {8,8};
+-static const int   d16[] = {16,16};
++static const __v4hi w9 = {9,9,9,9};
++static const __v4hi w1 = {1,1,1,1};
++static const __v2si d8 = {8,8};
++static const __v2si d16 = {16,16};
+ 
+ static void
+ mmx_bv_1 ( short* &q, short* e, int s, int s3 )
+@@ -140,15 +142,15 @@ mmx_bv_1 ( short* &q, short* e, int s, i
+   }
+   while (q+3 < e)
+     {
+-      MMXar( movq,       q-s,mm0);  // MM0=[ b3, b2, b1, b0 ]
+-      MMXar( movq,       q+s,mm2);  // MM2=[ c3, c2, c1, c0 ]
++      MMXar( movq,       *(uint64_t*)(q-s),mm0);  // MM0=[ b3, b2, b1, b0 ]
++      MMXar( movq,       *(uint64_t*)(q+s),mm2);  // MM2=[ c3, c2, c1, c0 ]
+       MMXrr( movq,       mm0,mm1);  
+       MMXrr( punpcklwd,  mm2,mm0);  // MM0=[ c1, b1, c0, b0 ]
+       MMXrr( punpckhwd,  mm2,mm1);  // MM1=[ c3, b3, c2, b2 ]
+       MMXar( pmaddwd,    w9,mm0);   // MM0=[ (c1+b1)*9, (c0+b0)*9 ]
+       MMXar( pmaddwd,    w9,mm1);   // MM1=[ (c3+b3)*9, (c2+b2)*9 ]
+-      MMXar( movq,       q-s3,mm2);
+-      MMXar( movq,       q+s3,mm4);
++      MMXar( movq,       *(uint64_t*)(q-s3),mm2);
++      MMXar( movq,       *(uint64_t*)(q+s3),mm4);
+       MMXrr( movq,       mm2,mm3);
+       MMXrr( punpcklwd,  mm4,mm2);  // MM2=[ d1, a1, d0, a0 ]
+       MMXrr( punpckhwd,  mm4,mm3);  // MM3=[ d3, a3, d2, a2 ]
+@@ -184,15 +186,15 @@ mmx_bv_2 ( short* &q, short* e, int s, i
+     }
+   while (q+3 < e)
+     {
+-      MMXar( movq,       q-s,mm0);  // MM0=[ b3, b2, b1, b0 ]
+-      MMXar( movq,       q+s,mm2);  // MM2=[ c3, c2, c1, c0 ]
++      MMXar( movq,       *(uint64_t*)(q-s),mm0);  // MM0=[ b3, b2, b1, b0 ]
++      MMXar( movq,       *(uint64_t*)(q+s),mm2);  // MM2=[ c3, c2, c1, c0 ]
+       MMXrr( movq,       mm0,mm1);  
+       MMXrr( punpcklwd,  mm2,mm0);  // MM0=[ c1, b1, c0, b0 ]
+       MMXrr( punpckhwd,  mm2,mm1);  // MM1=[ c3, b3, c2, b2 ]
+       MMXar( pmaddwd,    w9,mm0);   // MM0=[ (c1+b1)*9, (c0+b0)*9 ]
+       MMXar( pmaddwd,    w9,mm1);   // MM1=[ (c3+b3)*9, (c2+b2)*9 ]
+-      MMXar( movq,       q-s3,mm2);
+-      MMXar( movq,       q+s3,mm4);
++      MMXar( movq,       *(uint64_t*)(q-s3),mm2);
++      MMXar( movq,       *(uint64_t*)(q+s3),mm4);
+       MMXrr( movq,       mm2,mm3);
+       MMXrr( punpcklwd,  mm4,mm2);  // MM2=[ d1, a1, d0, a0 ]
+       MMXrr( punpckhwd,  mm4,mm3);  // MM3=[ d3, a3, d2, a2 ]
+--- DjVu3/src/libdjvu++/IW44EncodeCodec.cpp.orig	2001-03-06 20:55:42.000000000 +0100
++++ DjVu3/src/libdjvu++/IW44EncodeCodec.cpp	2021-03-29 22:29:02.901232941 +0200
+@@ -46,9 +46,11 @@
+ #include "IFFByteStream.h"
+ #include "GRect.h"
+ 
++#include <stdint.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <math.h>
++#include <mmintrin.h>
+ #include "MMX.h"
+ #undef IWTRANSFORM_TIMER
+ #ifdef IWTRANSFORM_TIMER
+@@ -264,10 +266,10 @@ class IW44Image::Transform::Encode : IW4
+ 
+ #ifdef MMX
+ 
+-static const short w9[]  = {9,9,9,9};
+-static const short w1[]  = {1,1,1,1};
+-static const int   d8[]  = {8,8};
+-static const int   d16[] = {16,16};
++static const __v4hi w9[]  = {9,9,9,9};
++static const __v4hi w1[]  = {1,1,1,1};
++static const __v2si d8[]  = {8,8};
++static const __v2si d16[] = {16,16};
+ 
+ 
+ static inline void
+@@ -282,15 +284,15 @@ mmx_fv_1 ( short* &q, short* e, int s, i
+     }
+   while (q+3<e)
+     {
+-      MMXar( movq,       q-s,mm0);  // MM0=[ b3, b2, b1, b0 ]
+-      MMXar( movq,       q+s,mm2);  // MM2=[ c3, c2, c1, c0 ]
++      MMXar( movq,       *(uint64_t*)(q-s),mm0);  // MM0=[ b3, b2, b1, b0 ]
++      MMXar( movq,       *(uint64_t*)(q+s),mm2);  // MM2=[ c3, c2, c1, c0 ]
+       MMXrr( movq,       mm0,mm1);  
+       MMXrr( punpcklwd,  mm2,mm0);  // MM0=[ c1, b1, c0, b0 ]
+       MMXrr( punpckhwd,  mm2,mm1);  // MM1=[ c3, b3, c2, b2 ]
+       MMXar( pmaddwd,    w9,mm0);   // MM0=[ (c1+b1)*9, (c0+b0)*9 ]
+       MMXar( pmaddwd,    w9,mm1);   // MM1=[ (c3+b3)*9, (c2+b2)*9 ]
+-      MMXar( movq,       q-s3,mm2);
+-      MMXar( movq,       q+s3,mm4);
++      MMXar( movq,       *(uint64_t*)(q-s3),mm2);
++      MMXar( movq,       *(uint64_t*)(q+s3),mm4);
+       MMXrr( movq,       mm2,mm3);
+       MMXrr( punpcklwd,  mm4,mm2);  // MM2=[ d1, a1, d0, a0 ]
+       MMXrr( punpckhwd,  mm4,mm3);  // MM3=[ d3, a3, d2, a2 ]
+@@ -325,15 +327,15 @@ mmx_fv_2 ( short* &q, short* e, int s, i
+     }
+   while (q+3<e)
+     {
+-      MMXar( movq,       q-s,mm0);  // MM0=[ b3, b2, b1, b0 ]
+-      MMXar( movq,       q+s,mm2);  // MM2=[ c3, c2, c1, c0 ]
++      MMXar( movq,       *(uint64_t*)(q-s),mm0);  // MM0=[ b3, b2, b1, b0 ]
++      MMXar( movq,       *(uint64_t*)(q+s),mm2);  // MM2=[ c3, c2, c1, c0 ]
+       MMXrr( movq,       mm0,mm1);  
+       MMXrr( punpcklwd,  mm2,mm0);  // MM0=[ c1, b1, c0, b0 ]
+       MMXrr( punpckhwd,  mm2,mm1);  // MM1=[ c3, b3, c2, b2 ]
+       MMXar( pmaddwd,    w9,mm0);   // MM0=[ (c1+b1)*9, (c0+b0)*9 ]
+       MMXar( pmaddwd,    w9,mm1);   // MM1=[ (c3+b3)*9, (c2+b2)*9 ]
+-      MMXar( movq,       q-s3,mm2);
+-      MMXar( movq,       q+s3,mm4);
++      MMXar( movq,       *(uint64_t*)(q-s3),mm2);
++      MMXar( movq,       *(uint64_t*)(q+s3),mm4);
+       MMXrr( movq,       mm2,mm3);
+       MMXrr( punpcklwd,  mm4,mm2);  // MM2=[ d1, a1, d0, a0 ]
+       MMXrr( punpckhwd,  mm4,mm3);  // MM3=[ d3, a3, d2, a2 ]
+--- DjVu3/src/libdjvu++/DjVuDocEditor.cpp.orig	2001-03-09 00:57:26.000000000 +0100
++++ DjVu3/src/libdjvu++/DjVuDocEditor.cpp	2021-03-29 22:31:09.837211936 +0200
+@@ -266,7 +266,7 @@ DjVuDocEditor::clean_files_map(void)
+       }
+       if (!f->file && !f->pool)
+       {
+-         DEBUG_MSG("Removing record '" << files_map.key(pos) << "'\n");
++         DEBUG_MSG("Removing record '" << (const char*)files_map.key(pos) << "'\n");
+          GPosition this_pos=pos;
+          ++pos;
+          files_map.del(this_pos);
+@@ -668,7 +668,7 @@ DjVuDocEditor::insert_group(const GList<
+       for(GPosition pos=file_names;pos;++pos)
+       {
+          GString fname=file_names[pos];
+-         DEBUG_MSG( "Inserting file '" << fname << "'\n" );
++         DEBUG_MSG( "Inserting file '" << (const char*)fname << "'\n" );
+          G_TRY {
+                // Check if it's a multipage document...
+             GP<DataPool> xdata_pool=DataPool::create(fname);
+@@ -1664,7 +1664,7 @@ DjVuDocEditor::save_file(const char * fi
+       if (file_pool)
+       {
+          GString save_name=GOS::expand_name(file_name, save_dir);
+-         DEBUG_MSG("Saving '" << file_id << "' to '" << save_name << "'\n");
++         DEBUG_MSG("Saving '" << file_id << "' to '" << (const char*)save_name << "'\n");
+          DataPool::load_file(save_name);
+          GP<ByteStream> gstr_out=ByteStream::create(save_name, "wb");
+          ByteStream &str_out=*gstr_out;
+--- DjVu3/src/libdjvu++/XMLAnno.cpp.orig	2001-03-09 00:57:26.000000000 +0100
++++ DjVu3/src/libdjvu++/XMLAnno.cpp	2021-03-29 22:31:52.656979962 +0200
+@@ -464,7 +464,7 @@ lt_XMLAnno::parse(const lt_XMLTags &tags
+       const GMap<GString,GString> &args=GObject->args;
+       GURL codebase;
+       {
+-        DEBUG_MSG("Setting up codebase... m_basedir = " << m_basedir << "\n");
++        DEBUG_MSG("Setting up codebase... m_basedir = " << (const char*)m_basedir << "\n");
+         GPosition codebasePos=args.contains("codebase");
+         // If user specified a codebase attribute, assume it is correct (absolute URL):
+         //  the GURL constructor will throw an exception if it isn't
+--- DjVu3/src/djvutools/reference/djvm.cpp.orig	2001-04-09 22:20:54.000000000 +0200
++++ DjVu3/src/djvutools/reference/djvm.cpp	2021-03-30 06:23:56.946950310 +0200
+@@ -109,7 +109,9 @@
+ 
+ #include <stdlib.h>
+ #include <stdio.h>
+-#include <iostream.h>
++#include <iostream>
++
++using namespace std;
+ 
+ static char * progname;
+ 
